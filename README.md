@@ -3,6 +3,7 @@
 A dashboard and trade research project tracking AUD/USD, Australian and US bond yields, the ASX 200, and key commodities (gold, iron ore, oil).
 
 Access dashboard - https://raymonxian-collab.github.io/GlobalMarkets_dash/AUD_USD_Dashboard_Standalone.html
+
 MOST RECENT UPDATE - 1/8/2026
 
 ## Read the trade thesis
