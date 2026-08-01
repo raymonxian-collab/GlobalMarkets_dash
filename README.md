@@ -2,6 +2,8 @@
 
 A dashboard and trade research project tracking AUD/USD, Australian and US bond yields, the ASX 200, and key commodities (gold, iron ore, oil).
 
+Access dashboard - 
+
 ## Files
 
 - **AUD_USD_Global_Markets_Dashboard.xlsx** — live market snapshot with calculated rate differentials
