@@ -6,7 +6,11 @@ Access dashboard - https://raymonxian-collab.github.io/GlobalMarkets_dash/AUD_US
 
 MOST RECENT UPDATE - 1/8/2026
 
+## summary of weekly market updates - from beginning of July 2026.
+
+[View on Google Docs] https://docs.google.com/document/d/1SD9d4MzBJg-tbZOqOGi4TSRDZTGoH81T/edit?usp=sharing&ouid=106596958818512693322&rtpof=true&sd=true
+
 ## Read the trade thesis
 
-📄 [View on Google Docs] https://docs.google.com/document/d/1LdMGZCp31AHb6VeK6bvSNpj4li_-YgxA/edit?usp=sharing&ouid=106596958818512693322&rtpof=true&sd=true
+[View on Google Docs] https://docs.google.com/document/d/1LdMGZCp31AHb6VeK6bvSNpj4li_-YgxA/edit?usp=sharing&ouid=106596958818512693322&rtpof=true&sd=true
 
