@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AUD/USD Global Markets Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #0B1018; --panel: #12192A; --panel-2: #161F35; --border: #232D45;
+    --text: #E7EAF2; --muted: #8992A9; --gold: #D9A441; --teal: #3FBFB5;
+    --up: #3ECF8E; --down: #E2574C; --manual: #E2A33A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .title-block .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+  .title-block h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.01em; }
+  .title-block p { margin: 6px 0 0; color: var(--muted); font-size: 13.5px; }
+  .scrubber { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+  .scrubber button { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 14px; transition: background 0.15s, border-color 0.15s; }
+  .scrubber button:hover { background: #1D2A45; border-color: var(--teal); }
+  .scrubber button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .scrubber-center { display: flex; flex-direction: column; align-items: center; min-width: 190px; position: relative; }
+  .scrubber-week { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .cursor-blink { display: inline-block; width: 7px; height: 15px; background: var(--gold); animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .placeholder-tag { font-size: 9.5px; color: var(--manual); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+  select#weekSelect { appearance: none; -webkit-appearance: none; background: transparent; border: none; color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; margin-top: 4px; cursor: pointer; text-align: center; }
+  select#weekSelect option { background: var(--panel-2); color: var(--text); }
+  .banner { display: none; align-items: center; gap: 10px; background: rgba(226, 163, 58, 0.1); border: 1px solid rgba(226, 163, 58, 0.35); color: var(--manual); font-size: 12.5px; padding: 10px 14px; border-radius: 8px; margin-bottom: 22px; }
+  .banner.show { display: flex; }
+  .banner .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--manual); flex: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; position: relative; overflow: hidden; }
+  .card.manual { border-color: rgba(226, 163, 58, 0.4); }
+  .card .label { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .card .manual-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--manual); }
+  .card .value { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+  .card .chg { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; margin-top: 6px; display: inline-block; }
+  .chg.up { color: var(--up); } .chg.down { color: var(--down); } .chg.flat { color: var(--muted); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 20px; }
+  .panel h2 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
+  .panel .sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+  .chart-holder { height: 260px; }
+  .notes { font-size: 13.5px; line-height: 1.6; color: #C7CCDA; }
+  footer { margin-top: 30px; font-size: 11.5px; color: var(--muted); text-align: center; }
+  @media (max-width: 640px) { header { flex-direction: column; align-items: stretch; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <div class="eyebrow">Live Markets Snapshot</div>
+      <h1>AUD/USD Global Markets Dashboard</h1>
+      <p>Rates &middot; Equities &middot; Commodities &mdash; week over week</p>
+    </div>
+    <div class="scrubber">
+      <button id="prevWeek" aria-label="Previous week">&lsaquo;</button>
+      <div class="scrubber-center">
+        <div class="scrubber-week"><span class="cursor-blink"></span><span id="weekLabel">&mdash;</span></div>
+        <select id="weekSelect"></select>
+      </div>
+      <button id="nextWeek" aria-label="Next week">&rsaquo;</button>
+    </div>
+  </header>
+  <div class="banner" id="placeholderBanner">
+    <span class="dot"></span>
+    <span>This week is sample placeholder data.</span>
+  </div>
+  <div class="grid" id="kpiGrid"></div>
+  <div class="panel">
+    <h2>AUD/USD &mdash; session history</h2>
+    <div class="sub" id="chartSub">Recent trading sessions for the selected week</div>
+    <div class="chart-holder"><canvas id="audusdChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <h2>Notes</h2>
+    <div class="notes" id="notesText">&mdash;</div>
+  </div>
+  <footer>
+    Manual-entry metrics (RBA cash rate, Fed funds rate, iron ore) are marked with an amber dot &mdash; verify these before relying on the sheet. 
+  </footer>
+</div>
+<script>
+const DATA = {"weeks": [{"label": "03 Jul 2026", "isPlaceholder": false, "metrics": {"audusd": {"value": 0.6897, "prior": 0.691, "format": "rate4"}, "asx200": {"value": 8745.5, "prior": 8760.0, "format": "index"}, "au10y": {"value": 0.0475, "prior": 0.0472, "format": "pct2", "interpolated": true}, "us10y": {"value": 0.045, "prior": 0.0448, "format": "pct2", "interpolated": true}, "rbaCash": {"value": 0.0435, "prior": 0.0435, "format": "pct2", "manual": true}, "fedFunds": {"value": 0.03625, "prior": 0.03625, "format": "pct2", "manual": true}, "gold": {"value": 3996.6, "prior": 4010.0, "format": "usd0"}, "ironOre": {"value": 100.5, "prior": 101.0, "format": "usd2", "manual": true, "interpolated": true}, "brent": {"value": 72.5, "prior": 71.8, "format": "usd2", "interpolated": true}, "wti": {"value": 69.97, "prior": 69.5, "format": "usd2"}}, "audusdSeries": [{"date": "2026-06-29", "value": 0.691}, {"date": "2026-06-30", "value": 0.6905}, {"date": "2026-07-01", "value": 0.6897}, {"date": "2026-07-02", "value": 0.6902}, {"date": "2026-07-03", "value": 0.6899}], "notes": "Early July: AUD/USD near six-week lows below US70 cents. Oil still relatively contained pre-escalation."}, {"label": "10 Jul 2026", "isPlaceholder": false, "metrics": {"audusd": {"value": 0.6942, "prior": 0.6897, "format": "rate4"}, "asx200": {"value": 8780.0, "prior": 8745.5, "format": "index", "interpolated": true}, "au10y": {"value": 0.0483, "prior": 0.0475, "format": "pct2"}, "us10y": {"value": 0.0455, "prior": 0.045, "format": "pct2", "interpolated": true}, "rbaCash": {"value": 0.0435, "prior": 0.0435, "format": "pct2", "manual": true}, "fedFunds": {"value": 0.03625, "prior": 0.03625, "format": "pct2", "manual": true}, "gold": {"value": 4125.0, "prior": 3996.6, "format": "usd0"}, "ironOre": {"value": 99.8, "prior": 100.5, "format": "usd2", "manual": true, "interpolated": true}, "brent": {"value": 77.0, "prior": 72.5, "format": "usd2", "interpolated": true}, "wti": {"value": 74.5, "prior": 69.97, "format": "usd2", "interpolated": true}}, "audusdSeries": [{"date": "2026-07-06", "value": 0.692}, {"date": "2026-07-07", "value": 0.6935}, {"date": "2026-07-08", "value": 0.693}, {"date": "2026-07-09", "value": 0.6938}, {"date": "2026-07-10", "value": 0.6942}], "notes": "AU 10Y yield rose to 4.83% (+3bps) on higher US Treasury yields. US-Iran conflict re-escalated mid-week, oil up ~7% over 5 days, gold initially fell on inflation/Fed-hike repricing before recovering."}, {"label": "17 Jul 2026", "isPlaceholder": false, "metrics": {"audusd": {"value": 0.6982, "prior": 0.6942, "format": "rate4"}, "asx200": {"value": 8796.7, "prior": 8780.0, "format": "index"}, "au10y": {"value": 0.049, "prior": 0.0483, "format": "pct2", "interpolated": true}, "us10y": {"value": 0.046, "prior": 0.0455, "format": "pct2", "interpolated": true}, "rbaCash": {"value": 0.0435, "prior": 0.0435, "format": "pct2", "manual": true}, "fedFunds": {"value": 0.03625, "prior": 0.03625, "format": "pct2", "manual": true}, "gold": {"value": 4100.0, "prior": 4125.0, "format": "usd0", "interpolated": true}, "ironOre": {"value": 99.2, "prior": 99.8, "format": "usd2", "manual": true, "interpolated": true}, "brent": {"value": 83.0, "prior": 77.0, "format": "usd2", "interpolated": true}, "wti": {"value": 79.5, "prior": 74.5, "format": "usd2", "interpolated": true}}, "audusdSeries": [{"date": "2026-07-13", "value": 0.695}, {"date": "2026-07-14", "value": 0.696}, {"date": "2026-07-15", "value": 0.6958}, {"date": "2026-07-16", "value": 0.6975}, {"date": "2026-07-17", "value": 0.6982}], "notes": "ASX 200 closed roughly flat for the week (-0.11%) as a 2.9% Materials selloff (gold, copper, iron ore miners) offset gains in seven other sectors. Rising oil kept Fed-hike fears alive."}, {"label": "24 Jul 2026", "isPlaceholder": false, "metrics": {"audusd": {"value": 0.6981, "prior": 0.6982, "format": "rate4"}, "asx200": {"value": 8809.7, "prior": 8796.7, "format": "index"}, "au10y": {"value": 0.0496, "prior": 0.049, "format": "pct2"}, "us10y": {"value": 0.0462, "prior": 0.046, "format": "pct2", "interpolated": true}, "rbaCash": {"value": 0.0435, "prior": 0.0435, "format": "pct2", "manual": true}, "fedFunds": {"value": 0.03625, "prior": 0.03625, "format": "pct2", "manual": true}, "gold": {"value": 4102.0, "prior": 4100.0, "format": "usd0"}, "ironOre": {"value": 98.5, "prior": 99.2, "format": "usd2", "manual": true, "interpolated": true}, "brent": {"value": 87.5, "prior": 83.0, "format": "usd2", "interpolated": true}, "wti": {"value": 82.0, "prior": 79.5, "format": "usd2", "interpolated": true}}, "audusdSeries": [{"date": "2026-07-20", "value": 0.7}, {"date": "2026-07-21", "value": 0.6998}, {"date": "2026-07-22", "value": 0.6996}, {"date": "2026-07-23", "value": 0.6968}, {"date": "2026-07-24", "value": 0.6981}], "notes": "AU 10Y yield climbed above 5% intraweek, highest since 20 May, on robust June jobs data (+76,300, well above forecast)."}, {"label": "31 Jul 2026", "isPlaceholder": false, "metrics": {"audusd": {"value": 0.699, "prior": 0.6981, "format": "rate4"}, "asx200": {"value": 8967.7, "prior": 8809.7, "format": "index"}, "au10y": {"value": 0.05, "prior": 0.0496, "format": "pct2"}, "us10y": {"value": 0.047, "prior": 0.0462, "format": "pct2"}, "rbaCash": {"value": 0.0435, "prior": 0.0435, "format": "pct2", "manual": true}, "fedFunds": {"value": 0.03625, "prior": 0.03625, "format": "pct2", "manual": true}, "gold": {"value": 4065.0, "prior": 4102.0, "format": "usd0"}, "ironOre": {"value": 98.27, "prior": 98.5, "format": "usd2", "manual": true}, "brent": {"value": 89.03, "prior": 87.5, "format": "usd2"}, "wti": {"value": 83.59, "prior": 82.0, "format": "usd2"}}, "audusdSeries": [{"date": "2026-07-25", "value": 0.697}, {"date": "2026-07-26", "value": 0.7}, {"date": "2026-07-27", "value": 0.699}, {"date": "2026-07-28", "value": 0.6985}, {"date": "2026-07-29", "value": 0.698}], "notes": "RBA held at 4.35%; Fed held at 3.50-3.75% with 3 dissents favouring a hike. Oil elevated on US-Iran conflict. Iron ore softening on China oversupply/soft demand."}, {"label": "01 Aug 2026 (live)", "isPlaceholder": false, "metrics": {"audusd": {"value": 0.7025431990623474, "prior": 0.7025185227394104, "format": "rate4"}, "asx200": {"value": 8976.7998046875, "prior": 8967.7001953125, "format": "index"}, "au10y": {"value": 0.05, "prior": 0.05, "format": "pct2"}, "us10y": {"value": 0.04744999885559082, "prior": 0.04663000106811523, "format": "pct2"}, "rbaCash": {"value": 0.0435, "prior": 0.0435, "format": "pct2", "manual": true}, "fedFunds": {"value": 0.03625, "prior": 0.03625, "format": "pct2", "manual": true}, "gold": {"value": 4049.10009765625, "prior": 4100.10009765625, "format": "usd0"}, "ironOre": {"value": 98.27, "prior": 98.27, "format": "usd2", "manual": true}, "brent": {"value": 90.12000274658203, "prior": 89.02999877929688, "format": "usd2"}, "wti": {"value": 84.66999816894531, "prior": 83.58999633789062, "format": "usd2"}}, "audusdSeries": [{"date": "2026-07-21", "value": 0.7001}, {"date": "2026-07-22", "value": 0.7001}, {"date": "2026-07-23", "value": 0.699}, {"date": "2026-07-24", "value": 0.6967}, {"date": "2026-07-27", "value": 0.6994}, {"date": "2026-07-28", "value": 0.6987}, {"date": "2026-07-29", "value": 0.6975}, {"date": "2026-07-30", "value": 0.6959}, {"date": "2026-07-31", "value": 0.7025}, {"date": "2026-08-01", "value": 0.7025}], "notes": "Live snapshot fetched from Yahoo Finance / RBA at run time."}]};
+let currentIndex = DATA.weeks.length - 1;
+let chartInstance = null;
+
+const FORMATTERS = {
+  rate4: v => v.toFixed(4),
+  index: v => v.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+  pct2: v => (v * 100).toFixed(2) + '%',
+  usd0: v => '$' + Math.round(v).toLocaleString(),
+  usd2: v => '$' + v.toFixed(2),
+};
+const LABELS = {
+  audusd: 'AUD/USD', asx200: 'ASX 200', au10y: 'AU 10Y Yield', us10y: 'US 10Y Yield',
+  rbaCash: 'RBA Cash Rate', fedFunds: 'Fed Funds (mid)', gold: 'Gold (US$/oz)',
+  ironOre: 'Iron Ore (US$/t)', brent: 'Brent Crude', wti: 'WTI Crude',
+};
+
+function loadData() { populateWeekSelect(); render(); }
+
+function populateWeekSelect() {
+  const sel = document.getElementById('weekSelect');
+  sel.innerHTML = '';
+  DATA.weeks.forEach((w, i) => {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = w.label;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', e => { currentIndex = parseInt(e.target.value, 10); render(); });
+}
+
+function render() {
+  const week = DATA.weeks[currentIndex];
+  document.getElementById('weekLabel').textContent = week.label;
+  document.getElementById('weekSelect').value = currentIndex;
+  document.getElementById('placeholderBanner').classList.toggle('show', !!week.isPlaceholder);
+document.getElementById('prevWeek').disabled = currentIndex <= 0;
+document.getElementById('nextWeek').disabled = currentIndex >= DATA.weeks.length - 1;
+  renderKpis(week);
+  renderChart(week);
+  document.getElementById('notesText').textContent = week.notes || '—';
+}
+
+function renderKpis(week) {
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = '';
+  Object.entries(week.metrics).forEach(([key, m]) => {
+    const fmt = FORMATTERS[m.format];
+    const chgPct = m.prior ? ((m.value - m.prior) / m.prior) * 100 : 0;
+    const chgClass = chgPct > 0.001 ? 'up' : chgPct < -0.001 ? 'down' : 'flat';
+    const arrow = chgPct > 0.001 ? '▲' : chgPct < -0.001 ? '▼' : '—';
+    const card = document.createElement('div');
+    card.className = 'card' + (m.manual ? ' manual' : '');
+    card.innerHTML = `
+      <div class="label">${m.manual ? '<span class="manual-dot"></span>' : ''}${LABELS[key] || key}</div>
+      <div class="value">${fmt(m.value)}</div>
+      <div class="chg ${chgClass}">${arrow} ${Math.abs(chgPct).toFixed(2)}% vs prior</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderChart(week) {
+  const ctx = document.getElementById('audusdChart').getContext('2d');
+  const labels = week.audusdSeries.map(p => p.date.slice(5));
+  const values = week.audusdSeries.map(p => p.value);
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data: values, borderColor: '#D9A441', backgroundColor: 'rgba(217, 164, 65, 0.08)', pointRadius: 3, pointBackgroundColor: '#D9A441', borderWidth: 2, fill: true, tension: 0.25 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#232D45' }, ticks: { color: '#8992A9', font: { family: 'IBM Plex Mono', size: 10 } } },
+        y: { grid: { color: '#232D45' }, ticks: { color: '#8992A9', font: { family: 'IBM Plex Mono', size: 10 } } },
+      }
+    }
+  });
+}
+
+document.getElementById('prevWeek').addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; render(); } });
+document.getElementById('nextWeek').addEventListener('click', () => { if (currentIndex < DATA.weeks.length - 1) { currentIndex++; render(); } });
+
+loadData();
+</script>
+</body>
+</html>
